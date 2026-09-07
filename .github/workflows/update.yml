@@ -1,0 +1,113 @@
+name: Atualizar Radar de FIIs
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 00:30 UTC = 21:30 no horário de Brasília (UTC-3).
+    - cron: '30 0 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update.yml'
+      - 'scripts/**'
+      - 'config/**'
+      - 'requirements.txt'
+      - 'index.html'
+      - 'assets/**'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: fii-radar-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    outputs:
+      pages_enabled: ${{ steps.pages.outputs.enabled }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Cache das fontes oficiais
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: fii-radar-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            fii-radar-${{ runner.os }}-
+
+      - name: Dependências
+        run: pip install -r requirements.txt
+
+      - name: Atualizar universo completo
+        run: python scripts/update_data.py
+
+      - name: Validar publicação
+        run: python scripts/selfcheck.py --data data/fii_ranking.json --min-universe 100
+
+      - name: Publicar nova base no repositório
+        run: |
+          git config user.name "fii-radar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/fii_data.js data/fii_ranking.json data/fii_ranking.csv data/coverage.json
+          if git diff --cached --quiet; then
+            echo "Sem alterações de dados."
+          else
+            git commit -m "data: atualização automática dos FIIs"
+            git push
+          fi
+
+      - name: Verificar se GitHub Pages está habilitado
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(curl -sS -o /tmp/pages.json -w "%{http_code}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages")
+          if [ "$code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            cat /tmp/pages.json
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages ainda não está habilitado (HTTP $code). O radar continuará atualizando os dados normalmente."
+          fi
+
+      - name: Configurar Pages
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar site para Pages
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: '.'
+
+  deploy:
+    if: needs.update.outputs.pages_enabled == 'true'
+    needs: update
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publicar GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
