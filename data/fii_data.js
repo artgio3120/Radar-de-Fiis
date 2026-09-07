@@ -1,6 +1,6 @@
 window.FII_DATA = {
   "meta": {
-    "updated_at": "2026-09-07T15:04+00:00",
+    "updated_at": "2026-09-07T15:10+00:00",
     "sources": {
       "b3": "B3 COTAHIST + lista oficial de FIIs",
       "cvm": "CVM Informes Mensal/Trimestral",
