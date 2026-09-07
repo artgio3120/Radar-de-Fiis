@@ -54,6 +54,9 @@ jobs:
       - name: Atualizar universo completo
         run: python scripts/update_data.py
 
+      - name: Consolidar tickers únicos
+        run: python scripts/dedupe_outputs.py
+
       - name: Validar publicação
         run: python scripts/selfcheck.py --data data/fii_ranking.json --min-universe 100
 
