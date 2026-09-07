@@ -1,0 +1,43 @@
+{
+  "presets": {
+    "2em1": {
+      "dy_min": 7.0,
+      "pvp_min": 0.7,
+      "pvp_max": 1.05,
+      "liquidity_min": 500000,
+      "pl_min": 0,
+      "vacancy_max": 30
+    },
+    "anchor": {
+      "dy_min": 7.0,
+      "pvp_min": 0.95,
+      "pvp_max": 1.05,
+      "liquidity_min": 1500000,
+      "pl_min": 0,
+      "vacancy_max": 10
+    },
+    "growth": {
+      "dy_min": 8.0,
+      "pvp_min": 0.8,
+      "pvp_max": 0.94,
+      "liquidity_min": 500000,
+      "pl_min": 0,
+      "vacancy_max": 30
+    },
+    "risk": {
+      "dy_min": 8.0,
+      "pvp_min": 0.7,
+      "pvp_max": 0.84,
+      "liquidity_min": 400000,
+      "pl_min": 0,
+      "vacancy_max": 30
+    }
+  },
+  "score_version": "2em1 Quant v2.1",
+  "critical_flags": [
+    "vp_cota_diverge_pl_cotas",
+    "pvp_fora_da_faixa",
+    "vacancia_extrema",
+    "sem_preco"
+  ]
+}
