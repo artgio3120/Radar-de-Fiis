@@ -31,3 +31,5 @@ jobs:
           git add -A
           git commit -m "feat: instalar Radar Quantitativo de FIIs v2"
           git push
+
+# bootstrap trigger
