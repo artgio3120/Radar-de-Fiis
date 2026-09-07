@@ -3,7 +3,6 @@ name: Atualizar Radar de FIIs
 on:
   workflow_dispatch:
   schedule:
-    # 00:30 UTC = 21:30 no horário de Brasília (UTC-3).
     - cron: '30 0 * * *'
   push:
     branches: [main]
@@ -22,7 +21,7 @@ permissions:
 
 concurrency:
   group: fii-radar-update
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   update:
@@ -33,13 +32,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
-
       - name: Cache das fontes oficiais
         uses: actions/cache@v4
         with:
@@ -47,19 +44,14 @@ jobs:
           key: fii-radar-${{ runner.os }}-${{ github.run_id }}
           restore-keys: |
             fii-radar-${{ runner.os }}-
-
       - name: Dependências
         run: pip install -r requirements.txt
-
       - name: Atualizar universo completo
         run: python scripts/update_data.py
-
       - name: Consolidar tickers únicos
         run: python scripts/dedupe_outputs.py
-
       - name: Validar publicação
         run: python scripts/selfcheck.py --data data/fii_ranking.json --min-universe 100
-
       - name: Publicar nova base no repositório
         run: |
           git config user.name "fii-radar-bot"
@@ -71,7 +63,6 @@ jobs:
             git commit -m "data: atualização automática dos FIIs"
             git push
           fi
-
       - name: Verificar se GitHub Pages está habilitado
         id: pages
         env:
@@ -89,11 +80,9 @@ jobs:
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "GitHub Pages ainda não está habilitado (HTTP $code). O radar continuará atualizando os dados normalmente."
           fi
-
       - name: Configurar Pages
         if: steps.pages.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
-
       - name: Empacotar site para Pages
         if: steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v4
