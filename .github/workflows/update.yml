@@ -1,5 +1,6 @@
 name: Atualizar Radar de FIIs
 
+# GitHub Pages ativado em 2026-09-07; este comentário também dispara uma nova publicação.
 on:
   workflow_dispatch:
   schedule:
